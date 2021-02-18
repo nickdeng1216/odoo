@@ -81,6 +81,7 @@ class IrConfigParameter(models.Model):
                  not exist.
         :rtype: string
         """
+
         param = self.search([('key', '=', key)])
         if param:
             old = param.value
