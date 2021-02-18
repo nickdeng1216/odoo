@@ -9,6 +9,7 @@ import logging
 
 from odoo import api, fields, models
 from odoo.tools import config, ormcache, mute_logger
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -81,6 +82,8 @@ class IrConfigParameter(models.Model):
                  not exist.
         :rtype: string
         """
+        raise UserError("key: %s", key)
+        raise UserError("value: %s", value)
         param = self.search([('key', '=', key)])
         if param:
             old = param.value
