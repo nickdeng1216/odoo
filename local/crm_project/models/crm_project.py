@@ -3,9 +3,9 @@
 # from odoo import models, fields, api
 
 
-# class src/odoo/local/crm(models.Model):
-#     _name = 'src/odoo/local/crm.src/odoo/local/crm'
-#     _description = 'src/odoo/local/crm.src/odoo/local/crm'
+# class src/odoo/local/crm_project(models.Model):
+#     _name = 'src/odoo/local/crm_project.src/odoo/local/crm_project'
+#     _description = 'src/odoo/local/crm_project.src/odoo/local/crm_project'
 
 #     name = fields.Char()
 #     value = fields.Integer()
