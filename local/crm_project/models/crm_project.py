@@ -15,10 +15,11 @@ class CrmLead(models.Model):
 
     def action_convert_to_a_project(self):
         self.ensure_one()
-        if self.stage_id.id == 4:
-            self.convert_to_a_project()
-        else:
-            raise Warning("You can just convert a sale's lead to a project when it wins.")
+        self.convert_to_a_project()
+        # if self.stage_id.id == 4:
+        #     self.convert_to_a_project()
+        # else:
+        #     raise Warning("You can just convert a sale's lead to a project when it wins.")
 
         return True
 
@@ -37,7 +38,7 @@ class CrmLead(models.Model):
                 })
                 lead.write({'project_id': project.id})
             else:
-                raise Warning("The project has been created.")
+                raise Warning("The project has been created as \"" + lead.name + " (from CRM)\".")
         _logger.info("finish converting into a project!")
         return True
 
