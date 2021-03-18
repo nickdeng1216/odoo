@@ -13,6 +13,14 @@ class CrmLead(models.Model):
 
     project_id = fields.Many2one('project.project', string='Project', ondelete='set null')
 
+    # project_ids = fields.Many2many('project.project', string='change log')
+    # project_ids = fields.Many2many(
+    #     'project.project',
+    #     'crm_lead_project_project_rel',
+    #     'id',
+    #     'id',
+    #     'change log')
+
     def action_convert_to_a_project(self):
         self.ensure_one()
         self.convert_to_a_project()
@@ -48,17 +56,7 @@ class CrmLead(models.Model):
         lead_id = self.id
         current_project_id = vals.get('project_id')
         pre_project_id = self.project_id.id
-        _logger.info('pre_project_id = %s' % pre_project_id)
-        _logger.info('current_project_id = %s' % current_project_id)
-        _logger.info('lead_id = %s' % lead_id)
         model_project_project = self.env['project.project']
-        # if current_project_id is not False:
-        #     model_project_project.browse(current_project_id).write({'lead_id': lead_id})
-        #     if pre_project_id is not False:
-        #         model_project_project.browse(pre_project_id).write({'lead_id': False})
-        # else:
-        #     if pre_project_id is not False:
-        #         model_project_project.browse(pre_project_id).write({'lead_id': lead_id})
         if current_project_id is not False:
             model_project_project.browse(current_project_id).write_from_crm(lead_id)
             if pre_project_id is not False:
@@ -67,7 +65,17 @@ class CrmLead(models.Model):
             if pre_project_id is not False:
                 model_project_project.browse(pre_project_id).write_from_crm(lead_id)
 
+        self.write_lead_project_log(current_project_id, lead_id, self._name)
         super(CrmLead, self).write(vals)
+
+    def write_lead_project_log(self, current_project_id, lead_id, model_name):
+        _logger.info('current_project_id=%s' % current_project_id)
+        _logger.info('lead_id=%s' % lead_id)
+        self.env['crm.lead.project.project.log'].create({
+            'lead_id': lead_id,
+            'project_id': current_project_id,
+            'model_name': model_name,
+        })
 
     def write_from_project(self, project_id):
         super(CrmLead, self).write({'project_id': project_id})
@@ -79,21 +87,21 @@ class Project(models.Model):
 
     lead_id = fields.Many2one('crm.lead', string='Opportunity', ondelete='set null')
 
+    # lead_ids = fields.Many2many('crm.lead', string='change log')
+    # lead_ids = fields.Many2many(
+    #     'crm.lead',
+    #     'crm_lead_project_project_rel',
+    #     'id',
+    #     'id',
+    #     'change log')
+
     def write(self, vals):
         _logger.info('start to project write')
         self.ensure_one()
         project_id = self.id
         current_lead_id = vals.get('lead_id')
         pre_lead_id = self.lead_id.id
-        _logger.info(current_lead_id)
         model_crm_lead = self.env['crm.lead']
-        # if current_lead_id is not False:
-        #     model_crm_lead.browse(current_lead_id).write({'project_id': project_id})
-        #     if pre_lead_id is not False:
-        #         model_crm_lead.browse(pre_lead_id).write({'project_id': False})
-        # else:
-        #     if pre_lead_id is not False:
-        #         model_crm_lead.browse(pre_lead_id).write({'project_id': project_id})
         if current_lead_id is not False:
             model_crm_lead.browse(current_lead_id).write_from_project(project_id)
             if pre_lead_id is not False:
@@ -101,22 +109,28 @@ class Project(models.Model):
         else:
             if pre_lead_id is not False:
                 model_crm_lead.browse(pre_lead_id).write_from_project(project_id)
-        super(Project, self).write(vals)
 
-        # check if there is an existing opportunity connecting to this project
-        # domain = [('project_id', '=', project_id)]
-        # leads = model_crm_lead.search(domain)
-        # leads.browse(pre_lead_id).write({'project_id': project_id})
-        # if current_lead_id is False or len(leads) == 0:
-        #     super(Project, self).write(vals)
-        #     if len(leads) == 0:
-        #         lead = model_crm_lead.browse(current_lead_id)
-        #         lead.write({'project_id': project_id})
-        # else:
-        #     _logger.info(leads[0].name)
-        #     raise UserError("The project has been connected to %s, please remove the connection in crm first." %
-        #                     leads[0].name)
+        self.write_lead_project_log(current_lead_id, project_id, self._name)
+        super(Project, self).write(vals)
         return True
+
+    def write_lead_project_log(self, current_lead_id, project_id, model_name):
+        _logger.info('project_id=%s' % project_id)
+        _logger.info('current_lead_id=%s' % current_lead_id)
+        self.env['crm.lead.project.project.log'].create({
+            'lead_id': current_lead_id,
+            'project_id': project_id,
+            'model_name': model_name,
+        })
 
     def write_from_crm(self, lead_id):
         super(Project, self).write({'lead_id': lead_id})
+
+
+class CrmLeadProjectLog(models.Model):
+    _name = 'crm.lead.project.project.log'
+    _description = 'change log of crm.lead and project.project'
+
+    lead_id = fields.Many2one('crm.lead', string='Opportunity', ondelete='set null')
+    project_id = fields.Many2one('project.project', string='Project', ondelete='set null')
+    model_name = fields.Char('model initiating the connection')
