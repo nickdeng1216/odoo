@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="crm_lead_view_form_inherited" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherited</field>
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
@@ -10,7 +11,7 @@
             </xpath>
             <xpath expr="/form/sheet/group" position="after">
                 <group>
-                    <field name="project_id"/>
+                    <field name="project_id" domain="[('lead_id', '=', False)]"/>
                 </group>
             </xpath>
         </field>
