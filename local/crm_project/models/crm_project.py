@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, fields, api
+from odoo import models, fields
 from odoo.exceptions import UserError
 import logging
 
@@ -12,14 +12,6 @@ class CrmLead(models.Model):
     _description = 'convert a lead in crm to a project'
 
     project_id = fields.Many2one('project.project', string='Project', ondelete='set null')
-
-    # project_ids = fields.Many2many('project.project', string='change log')
-    # project_ids = fields.Many2many(
-    #     'project.project',
-    #     'crm_lead_project_project_rel',
-    #     'id',
-    #     'id',
-    #     'change log')
 
     def action_convert_to_a_project(self):
         self.ensure_one()
@@ -46,7 +38,7 @@ class CrmLead(models.Model):
                 })
                 lead.write({'project_id': project.id})
             else:
-                raise Warning("The project has been created as \"%s (from CRM)\"." % lead.name)
+                raise UserError("The project has been created as \"%s (from CRM)\"." % lead.name)
         _logger.info("finish converting into a project!")
         return True
 
@@ -65,17 +57,8 @@ class CrmLead(models.Model):
             if pre_project_id is not False:
                 model_project_project.browse(pre_project_id).write_from_crm(lead_id)
 
-        self.write_lead_project_log(current_project_id, lead_id, self._name)
+        self.env["crm.lead.project.project.log"].write_lead_project_log(current_project_id, lead_id, self._name)
         super(CrmLead, self).write(vals)
-
-    def write_lead_project_log(self, current_project_id, lead_id, model_name):
-        _logger.info('current_project_id=%s' % current_project_id)
-        _logger.info('lead_id=%s' % lead_id)
-        self.env['crm.lead.project.project.log'].create({
-            'lead_id': lead_id,
-            'project_id': current_project_id,
-            'model_name': model_name,
-        })
 
     def write_from_project(self, project_id):
         super(CrmLead, self).write({'project_id': project_id})
@@ -86,14 +69,6 @@ class Project(models.Model):
     _description = 'convert a lead in crm to a task in project'
 
     lead_id = fields.Many2one('crm.lead', string='Opportunity', ondelete='set null')
-
-    # lead_ids = fields.Many2many('crm.lead', string='change log')
-    # lead_ids = fields.Many2many(
-    #     'crm.lead',
-    #     'crm_lead_project_project_rel',
-    #     'id',
-    #     'id',
-    #     'change log')
 
     def write(self, vals):
         _logger.info('start to project write')
@@ -110,18 +85,9 @@ class Project(models.Model):
             if pre_lead_id is not False:
                 model_crm_lead.browse(pre_lead_id).write_from_project(project_id)
 
-        self.write_lead_project_log(current_lead_id, project_id, self._name)
+        self.env["crm.lead.project.project.log"].write_lead_project_log(project_id, current_lead_id, self._name)
         super(Project, self).write(vals)
         return True
-
-    def write_lead_project_log(self, current_lead_id, project_id, model_name):
-        _logger.info('project_id=%s' % project_id)
-        _logger.info('current_lead_id=%s' % current_lead_id)
-        self.env['crm.lead.project.project.log'].create({
-            'lead_id': current_lead_id,
-            'project_id': project_id,
-            'model_name': model_name,
-        })
 
     def write_from_crm(self, lead_id):
         super(Project, self).write({'lead_id': lead_id})
@@ -134,3 +100,12 @@ class CrmLeadProjectLog(models.Model):
     lead_id = fields.Many2one('crm.lead', string='Opportunity', ondelete='set null')
     project_id = fields.Many2one('project.project', string='Project', ondelete='set null')
     model_name = fields.Char('model initiating the connection')
+
+    def write_lead_project_log(self, project_id, lead_id, model_name):
+        _logger.info('project_id: %s' % project_id)
+        _logger.info('lead_id: %s' % lead_id)
+        self.env['crm.lead.project.project.log'].create({
+            'lead_id': lead_id,
+            'project_id': project_id,
+            'model_name': model_name,
+        })
